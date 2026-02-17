@@ -1,61 +1,56 @@
 🪢 Jogo da Forca
 
-Projeto desenvolvido para praticar HTML5, CSS3 e JavaScript, através da criação de uma versão funcional do clássico Jogo da Forca — onde você tenta adivinhar a palavra oculta letra por letra antes de completar o desenho do “enforcado”.
+Projeto desenvolvido para praticar HTML5, CSS3 e JavaScript através da criação de uma versão funcional do clássico Jogo da Forca — onde o jogador precisa adivinhar a palavra oculta letra por letra antes de atingir o limite de erros.
 
-🔗 Jogue agora online:
+🔗 Jogue online:
 https://luizagostinho.github.io/jogo-da-forca/
 
 🚀 Funcionalidades
 
-🎯 Jogo clássico da forca: adivinhe letras antes de atingir o limite de erros
+Adivinhar letras até descobrir a palavra secreta
 
-📍 Contagem de erros e indicações visuais (quantidade de tentativas restantes)
+Contagem de erros durante a partida
 
-🧠 Dicas para auxiliar na descoberta da palavra
+Indicação visual do progresso do jogo
 
-🆕 Botão “Novo Jogo” para reiniciar a partida
+Botão Novo Jogo para reiniciar a partida
 
-🎮 Interface interativa e simples de usar
+Interface simples e interativa
 
-💡 Pode ser jogado diretamente no navegador sem instalação
+Execução direta no navegador (sem instalação)
 
 🛠️ Tecnologias Utilizadas
 
-HTML5 — marcação da estrutura do jogo
+HTML5 — estrutura da aplicação
 
-CSS3 — estilização visual e responsividade
+CSS3 — estilização e layout
 
-JavaScript — lógica do jogo (detecção de letras, contagem de erros, reinício, etc.)
+JavaScript — lógica do jogo e manipulação do DOM
 
-🧠 O Que Foi Praticado
+🧠 Conceitos Praticados
 
-Este projeto te permitiu aplicar e reforçar conceitos importantes de desenvolvimento web, como:
+Manipulação do DOM
 
-📌 Manipulação do DOM para exibir/atualizar letras e estado do jogo
+Eventos de teclado
 
-🖱️ Captura e tratamento de eventos de teclado
+Estruturas condicionais
 
-🔁 Lógica de jogo (condições de vitória/derrota)
+Arrays e strings em JavaScript
 
-🔤 Validação de entrada de dados (letras válidas)
+Controle de estado do jogo (vitória e derrota)
 
-🧩 Estrutura de controle de fluxo e arrays em JavaScript
+Validação de entrada do usuário
 
 💻 Como Executar Localmente
 
-Clone o repositório
+Clone o repositório:
 
 git clone https://github.com/luizagostinho/jogo-da-forca.git
 
 
-Abra o index.html no navegador
+Abra o arquivo:
 
-Basta dar dois cliques ou arrastar para a janela do navegador
+index.html
 
-Jogue e divirta-se!
 
-📸 Preview
-
-(Aqui você pode incluir uma imagem/vídeo da interface do jogo — exemplo abaixo)
-
-![Preview do Jogo da Forca](./assets/preview.png)
+Jogue diretamente no navegador 🎮
