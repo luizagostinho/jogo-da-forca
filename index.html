@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jogo da Forca</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Fredoka', sans-serif; }
+    
+    .hangman-part { opacity: 0; transition: opacity 0.3s ease; }
+    .hangman-part.visible { opacity: 1; }
+    
+    .letter-btn {
+      transition: all 0.2s ease;
+    }
+    .letter-btn:hover:not(:disabled) {
+      transform: scale(1.1);
+    }
+    .letter-btn:disabled {
+      cursor: not-allowed;
+    }
+    
+    .word-letter {
+      animation: bounceIn 0.4s ease;
+    }
+    
+    @keyframes bounceIn {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+    
+    .shake { animation: shake 0.5s ease; }
+    
+    @keyframes celebrate {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      25% { transform: scale(1.1) rotate(-5deg); }
+      75% { transform: scale(1.1) rotate(5deg); }
+    }
+    
+    .celebrate { animation: celebrate 0.6s ease infinite; }
+  </style>
+</head>
+<body class="h-full">
+  <div id="app-wrapper" class="h-full w-full overflow-auto" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);">
+    <div class="min-h-full flex flex-col items-center justify-center p-4 sm:p-6">
+      
+      <!-- Header -->
+      <header class="text-center mb-6">
+        <h1 id="game-title" class="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-2" style="text-shadow: 0 4px 20px rgba(233, 69, 96, 0.5);">
+          🎯 Jogo da Forca
+        </h1>
+        <p class="text-gray-400 text-sm sm:text-base">Adivinhe a palavra antes que seja tarde!</p>
+      </header>
+
+      <!-- Main Game Area -->
+      <main class="w-full max-w-4xl flex flex-col lg:flex-row gap-6 items-center justify-center">
+        
+        <!-- Hangman Drawing -->
+        <div class="bg-white/10 backdrop-blur-sm rounded-3xl p-6 shadow-2xl border border-white/20">
+          <svg viewBox="0 0 200 250" class="w-48 h-60 sm:w-56 sm:h-72">
+            <!-- Base -->
+            <line x1="20" y1="230" x2="180" y2="230" stroke="#e94560" stroke-width="4" stroke-linecap="round"/>
+            <!-- Pole -->
+            <line x1="60" y1="230" x2="60" y2="20" stroke="#e94560" stroke-width="4" stroke-linecap="round"/>
+            <!-- Top -->
+            <line x1="60" y1="20" x2="140" y2="20" stroke="#e94560" stroke-width="4" stroke-linecap="round"/>
+            <!-- Rope -->
+            <line x1="140" y1="20" x2="140" y2="50" stroke="#e94560" stroke-width="4" stroke-linecap="round"/>
+            
+            <!-- Head -->
+            <circle id="head" class="hangman-part" cx="140" cy="70" r="20" fill="none" stroke="#fff" stroke-width="4"/>
+            <!-- Body -->
+            <line id="body" class="hangman-part" x1="140" y1="90" x2="140" y2="150" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+            <!-- Left Arm -->
+            <line id="left-arm" class="hangman-part" x1="140" y1="110" x2="110" y2="130" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+            <!-- Right Arm -->
+            <line id="right-arm" class="hangman-part" x1="140" y1="110" x2="170" y2="130" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+            <!-- Left Leg -->
+            <line id="left-leg" class="hangman-part" x1="140" y1="150" x2="110" y2="190" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+            <!-- Right Leg -->
+            <line id="right-leg" class="hangman-part" x1="140" y1="150" x2="170" y2="190" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+            
+            <!-- Face (shown on game over) -->
+            <g id="sad-face" class="hangman-part">
+              <circle cx="133" cy="67" r="2" fill="#fff"/>
+              <circle cx="147" cy="67" r="2" fill="#fff"/>
+              <path d="M 132 80 Q 140 74 148 80" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+            </g>
+          </svg>
+          
+          <!-- Errors Counter -->
+          <div class="text-center mt-4">
+            <span class="text-gray-400 text-sm">Erros: </span>
+            <span id="error-count" class="text-2xl font-bold text-red-400">0</span>
+            <span class="text-gray-400 text-sm"> / 6</span>
+          </div>
+        </div>
+
+        <!-- Game Controls -->
+        <div class="flex-1 w-full max-w-md">
+          
+          <!-- Word Display -->
+          <div id="word-display" class="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 min-h-16">
+            <!-- Letters will be inserted here -->
+          </div>
+
+          <!-- Hint -->
+          <div id="hint-container" class="text-center mb-6 bg-white/5 rounded-xl p-3 border border-white/10">
+            <span class="text-gray-500 text-sm">💡 Dica: </span>
+            <span id="hint-text" class="text-cyan-400 font-medium"></span>
+          </div>
+
+          <!-- Game Message -->
+          <div id="game-message" class="text-center mb-6 hidden">
+            <p id="message-text" class="text-2xl sm:text-3xl font-bold"></p>
+            <p id="correct-word" class="text-gray-400 mt-2"></p>
+          </div>
+
+          <!-- Keyboard -->
+          <div id="keyboard" class="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-6">
+            <!-- Letters will be inserted here -->
+          </div>
+
+          <!-- New Game Button -->
+          <div class="text-center">
+            <button id="new-game-btn" onclick="startNewGame()" class="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-cyan-500/30 transition-all hover:scale-105 active:scale-95">
+              🔄 Novo Jogo
+            </button>
+          </div>
+        </div>
+      </main>
+
+      <!-- Footer -->
+      <footer class="mt-8 text-center">
+        <p class="text-gray-500 text-sm">Pressione uma letra para jogar</p>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    // Word bank with hints
+    const words = [
+      { word: 'PROGRAMACAO', hint: 'Arte de criar software' },
+      { word: 'JAVASCRIPT', hint: 'Linguagem da web' },
+      { word: 'COMPUTADOR', hint: 'Máquina de processar dados' },
+      { word: 'INTERNET', hint: 'Rede mundial' },
+      { word: 'ALGORITMO', hint: 'Sequência de instruções' },
+      { word: 'TECLADO', hint: 'Dispositivo de entrada' },
+      { word: 'MONITOR', hint: 'Tela do computador' },
+      { word: 'CELULAR', hint: 'Telefone portátil' },
+      { word: 'BORBOLETA', hint: 'Inseto colorido que voa' },
+      { word: 'CHOCOLATE', hint: 'Doce feito de cacau' },
+      { word: 'ELEFANTE', hint: 'Maior mamífero terrestre' },
+      { word: 'UNIVERSO', hint: 'Tudo que existe' },
+      { word: 'OCEANO', hint: 'Grande massa de água salgada' },
+      { word: 'MONTANHA', hint: 'Elevação natural do terreno' },
+      { word: 'GUITARRA', hint: 'Instrumento musical de cordas' },
+      { word: 'FUTEBOL', hint: 'Esporte mais popular do Brasil' },
+      { word: 'HOSPITAL', hint: 'Local de tratamento médico' },
+      { word: 'BIBLIOTECA', hint: 'Local com muitos livros' },
+      { word: 'AVENTURA', hint: 'Experiência emocionante' },
+      { word: 'DIAMANTE', hint: 'Pedra preciosa mais dura' }
+    ];
+
+    const hangmanParts = ['head', 'body', 'left-arm', 'right-arm', 'left-leg', 'right-leg'];
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    let currentWord = '';
+    let currentHint = '';
+    let guessedLetters = [];
+    let errors = 0;
+    let gameOver = false;
+
+    // Default config
+    const defaultConfig = {
+      game_title: '🎯 Jogo da Forca',
+      win_message: '🎉 Parabéns! Você venceu!',
+      lose_message: '😢 Que pena! Tente novamente!',
+      primary_color: '#e94560',
+      secondary_color: '#0f3460',
+      text_color: '#ffffff',
+      accent_color: '#06b6d4',
+      bg_color: '#1a1a2e'
+    };
+
+    let config = { ...defaultConfig };
+
+    // Initialize keyboard
+    function initKeyboard() {
+      const keyboard = document.getElementById('keyboard');
+      keyboard.innerHTML = '';
+      
+      alphabet.split('').forEach(letter => {
+        const btn = document.createElement('button');
+        btn.className = 'letter-btn w-8 h-10 sm:w-10 sm:h-12 rounded-lg font-bold text-sm sm:text-base shadow-md';
+        btn.style.background = config.accent_color;
+        btn.style.color = config.text_color;
+        btn.textContent = letter;
+        btn.onclick = () => guessLetter(letter);
+        btn.id = `key-${letter}`;
+        keyboard.appendChild(btn);
+      });
+    }
+
+    // Start a new game
+    function startNewGame() {
+      const randomIndex = Math.floor(Math.random() * words.length);
+      currentWord = words[randomIndex].word;
+      currentHint = words[randomIndex].hint;
+      guessedLetters = [];
+      errors = 0;
+      gameOver = false;
+
+      // Reset UI
+      document.getElementById('error-count').textContent = '0';
+      document.getElementById('hint-text').textContent = currentHint;
+      document.getElementById('game-message').classList.add('hidden');
+      
+      // Reset hangman
+      hangmanParts.forEach(part => {
+        document.getElementById(part).classList.remove('visible');
+      });
+      document.getElementById('sad-face').classList.remove('visible');
+
+      // Reset keyboard
+      initKeyboard();
+
+      // Display word
+      updateWordDisplay();
+    }
+
+    // Update word display
+    function updateWordDisplay() {
+      const wordDisplay = document.getElementById('word-display');
+      wordDisplay.innerHTML = '';
+
+      currentWord.split('').forEach((letter, index) => {
+        const letterDiv = document.createElement('div');
+        letterDiv.className = 'w-10 h-12 sm:w-12 sm:h-14 flex items-center justify-center rounded-lg text-xl sm:text-2xl font-bold border-b-4';
+        letterDiv.style.background = 'rgba(255,255,255,0.1)';
+        letterDiv.style.borderColor = config.primary_color;
+        letterDiv.style.color = config.text_color;
+        
+        if (guessedLetters.includes(letter)) {
+          letterDiv.textContent = letter;
+          letterDiv.classList.add('word-letter');
+        } else {
+          letterDiv.textContent = '_';
+        }
+        
+        wordDisplay.appendChild(letterDiv);
+      });
+    }
+
+    // Guess a letter
+    function guessLetter(letter) {
+      if (gameOver || guessedLetters.includes(letter)) return;
+
+      guessedLetters.push(letter);
+      const btn = document.getElementById(`key-${letter}`);
+
+      if (currentWord.includes(letter)) {
+        // Correct guess
+        btn.style.background = '#10b981';
+        btn.disabled = true;
+        updateWordDisplay();
+        
+        // Check for win
+        if (checkWin()) {
+          endGame(true);
+        }
+      } else {
+        // Wrong guess
+        btn.style.background = '#ef4444';
+        btn.disabled = true;
+        errors++;
+        document.getElementById('error-count').textContent = errors;
+        
+        // Show hangman part
+        if (errors <= hangmanParts.length) {
+          document.getElementById(hangmanParts[errors - 1]).classList.add('visible');
+        }
+        
+        // Shake animation
+        document.getElementById('word-display').classList.add('shake');
+        setTimeout(() => {
+          document.getElementById('word-display').classList.remove('shake');
+        }, 500);
+        
+        // Check for lose
+        if (errors >= 6) {
+          document.getElementById('sad-face').classList.add('visible');
+          endGame(false);
+        }
+      }
+    }
+
+    // Check if player won
+    function checkWin() {
+      return currentWord.split('').every(letter => guessedLetters.includes(letter));
+    }
+
+    // End game
+    function endGame(won) {
+      gameOver = true;
+      const messageDiv = document.getElementById('game-message');
+      const messageText = document.getElementById('message-text');
+      const correctWord = document.getElementById('correct-word');
+
+      messageDiv.classList.remove('hidden');
+      
+      if (won) {
+        messageText.textContent = config.win_message;
+        messageText.style.color = '#10b981';
+        messageText.classList.add('celebrate');
+        correctWord.textContent = '';
+      } else {
+        messageText.textContent = config.lose_message;
+        messageText.style.color = '#ef4444';
+        messageText.classList.remove('celebrate');
+        correctWord.textContent = `A palavra era: ${currentWord}`;
+      }
+
+      // Disable all keyboard buttons
+      alphabet.split('').forEach(letter => {
+        const btn = document.getElementById(`key-${letter}`);
+        if (btn && !btn.disabled) {
+          btn.disabled = true;
+          btn.style.opacity = '0.5';
+        }
+      });
+    }
+
+    // Keyboard event listener
+    document.addEventListener('keydown', (e) => {
+      const letter = e.key.toUpperCase();
+      if (alphabet.includes(letter) && !gameOver) {
+        guessLetter(letter);
+      }
+    });
+
+    // Config change handler
+    async function onConfigChange(newConfig) {
+      config = { ...defaultConfig, ...newConfig };
+      
+      // Update title
+      document.getElementById('game-title').textContent = config.game_title || defaultConfig.game_title;
+      
+      // Update colors
+      document.documentElement.style.setProperty('--primary', config.primary_color);
+      
+      // Update game message if visible
+      const messageText = document.getElementById('message-text');
+      if (!document.getElementById('game-message').classList.contains('hidden')) {
+        if (messageText.style.color === 'rgb(16, 185, 129)') {
+          messageText.textContent = config.win_message || defaultConfig.win_message;
+        } else {
+          messageText.textContent = config.lose_message || defaultConfig.lose_message;
+        }
+      }
+    }
+
+    // Map to capabilities
+    function mapToCapabilities(cfg) {
+      return {
+        recolorables: [
+          {
+            get: () => cfg.bg_color || defaultConfig.bg_color,
+            set: (value) => { cfg.bg_color = value; window.elementSdk.setConfig({ bg_color: value }); }
+          },
+          {
+            get: () => cfg.primary_color || defaultConfig.primary_color,
+            set: (value) => { cfg.primary_color = value; window.elementSdk.setConfig({ primary_color: value }); }
+          },
+          {
+            get: () => cfg.text_color || defaultConfig.text_color,
+            set: (value) => { cfg.text_color = value; window.elementSdk.setConfig({ text_color: value }); }
+          },
+          {
+            get: () => cfg.accent_color || defaultConfig.accent_color,
+            set: (value) => { cfg.accent_color = value; window.elementSdk.setConfig({ accent_color: value }); }
+          },
+          {
+            get: () => cfg.secondary_color || defaultConfig.secondary_color,
+            set: (value) => { cfg.secondary_color = value; window.elementSdk.setConfig({ secondary_color: value }); }
+          }
+        ],
+        borderables: [],
+        fontEditable: undefined,
+        fontSizeable: undefined
+      };
+    }
+
+    // Map to edit panel values
+    function mapToEditPanelValues(cfg) {
+      return new Map([
+        ['game_title', cfg.game_title || defaultConfig.game_title],
+        ['win_message', cfg.win_message || defaultConfig.win_message],
+        ['lose_message', cfg.lose_message || defaultConfig.lose_message]
+      ]);
+    }
+
+    // Initialize SDK and game
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities,
+        mapToEditPanelValues
+      });
+    }
+
+    // Start the game
+    startNewGame();
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9cf7a7cec3336ea4',t:'MTc3MTM1NjE2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
