@@ -1,4 +1,4 @@
-🪢 Jogo da Forca
+#🪢 Jogo da Forca
 
 Projeto desenvolvido para praticar HTML5, CSS3 e JavaScript através da criação de uma versão funcional do clássico Jogo da Forca — onde o jogador precisa adivinhar a palavra oculta letra por letra antes de atingir o limite de erros.
 
